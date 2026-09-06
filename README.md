@@ -22,6 +22,7 @@ onto a new machine and go from bare metal to a working desktop in two stages:
 | Login | **greetd + tuigreet** | TTY-style greeter, no Qt/GTK stack, fast boot |
 | Lock / idle | hyprlock + hypridle | First-party, configured here |
 | Screenshots | grim + slurp + swappy | |
+| Coding agent | **Claude Code** | Native installer, self-updating; user settings versioned here |
 | Fonts | JetBrainsMono Nerd Font | Icon glyphs for the bar and terminal |
 
 ## Repository layout
@@ -39,6 +40,7 @@ ghostty/.config/ghostty/         # stow package -> ~/.config/ghostty/
 rofi/.config/rofi/               # stow package -> ~/.config/rofi/
 mako/.config/mako/               # stow package -> ~/.config/mako/
 scripts/.local/bin/              # stow package -> ~/.local/bin/
+claude/.claude/settings.json     # stow package -> ~/.claude/settings.json
 hosts/
   default/monitors.conf          # fallback layout: autoconfig
   example-laptop/monitors.conf   # copy these to hosts/<your-hostname>/
@@ -143,11 +145,12 @@ What it does, in order:
 2. Installs **yay** from the AUR if it is missing.
 3. `pacman -S --needed` everything in `pkglist-official.txt`.
 4. `yay -S --needed` everything in `pkglist-aur.txt`.
-5. Backs up any conflicting real files to `~/.config-backup/<timestamp>/`, then
+5. Installs **Claude Code** via Anthropic's native installer, if not present.
+6. Backs up any conflicting real files to `~/.config-backup/<timestamp>/`, then
    stows every config package into `$HOME`.
-6. Links `~/.config/hypr/monitors.conf` to this host's layout and creates an
+7. Links `~/.config/hypr/monitors.conf` to this host's layout and creates an
    empty `~/.config/hypr/local.conf` if absent.
-7. Enables `NetworkManager`, `bluetooth`, and `greetd`, and writes
+8. Enables `NetworkManager`, `bluetooth`, and `greetd`, and writes
    `/etc/greetd/config.toml` for tuigreet.
 
 **It is idempotent.** Package installs use `--needed`, `stow --restow` reconciles
@@ -210,6 +213,65 @@ mkdir -p ~/.config/hyprpanel && cp hyprpanel/config.json ~/.config/hyprpanel/
 The filename has moved between HyprPanel versions (`options.json` in older
 releases, `config.json` in newer ones) — check what is actually in
 `~/.config/hyprpanel/` after first launch.
+
+### Claude Code
+
+`install.sh` installs it with Anthropic's native installer:
+
+```bash
+curl -fsSL https://claude.ai/install.sh | bash
+```
+
+That puts a launcher at `~/.local/bin/claude` pointing into
+`~/.local/share/claude/versions/`, and it **updates itself in the background** —
+so unlike every other package here, later `install.sh` runs skip it entirely
+once `claude` is on PATH. Sign in by running `claude` once; `claude doctor`
+prints install health and validates your settings file without starting a
+session.
+
+Alternatives, if you'd rather not curl-pipe-bash on a fresh box:
+
+| Method | Command | Trade-off |
+| --- | --- | --- |
+| Native (used here) | `curl -fsSL https://claude.ai/install.sh \| bash` | Official, auto-updates. Outside pacman |
+| Native, stable channel | `curl -fsSL https://claude.ai/install.sh \| bash -s stable` | ~1 week behind, skips releases with major regressions |
+| AUR | `yay -S claude-code` | pacman-managed, but community-maintained and auto-update is disabled |
+| npm | `npm install -g @anthropic-ai/claude-code` | Needs Node 22+; manual updates |
+
+Anthropic publishes signed apt/dnf/apk repos but **no pacman repo**, so on Arch
+the native installer is the official path. Releases from 2.1.89 on ship a
+GPG-signed `manifest.json` if you want to verify the binary before trusting it.
+
+#### What is and isn't tracked
+
+Only `claude/.claude/settings.json` is committed — a near-empty starting point
+that denies reads of `.env` files:
+
+```json
+{
+  "permissions": {
+    "allow": [],
+    "deny": ["Read(./.env)", "Read(./.env.*)"]
+  }
+}
+```
+
+Everything else Claude Code writes to `~/.claude/` is credentials, session
+history, and per-project state, and is gitignored via `claude/.claude/*` with a
+negation for `settings.json`. **Never put secrets in the `env` block of a
+tracked settings file** — that is the one key in this repo where a
+`.gitignore` will not save you, since the file itself is committed.
+
+Settings precedence, highest first: managed → `claude --settings` → project
+`.claude/settings.local.json` → project `.claude/settings.json` → user
+`~/.claude/settings.json` (the one this repo stows). So per-project settings
+always win over the versioned defaults, and `settings.local.json` — which
+Claude Code adds to your global git excludes itself — is where machine-specific
+or private overrides belong.
+
+`install.sh` creates `~/.claude/` as a real directory before stowing, for the
+same reason it does with `~/.config/hypr`: a folded directory symlink would send
+your credentials and session history into the repo.
 
 ---
 
@@ -284,6 +346,7 @@ Keep it that way. Anything private belongs in a gitignored path:
 | Path | Use |
 | --- | --- |
 | `~/.config/hypr/local.conf` | machine-only Hyprland overrides |
+| `~/.claude/`, `.claude/settings.local.json` | Claude Code credentials, state, private overrides |
 | `local/`, `secrets/` | anything else machine-specific |
 | `*.local.conf`, `*.local.json` | local variants of tracked files |
 | `.env`, `*.key`, `*.pem`, `id_*` | keys and tokens |

@@ -16,7 +16,7 @@
 set -euo pipefail
 
 REPO_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-STOW_PACKAGES=(hypr ghostty rofi mako scripts)
+STOW_PACKAGES=(hypr ghostty rofi mako scripts claude)
 BACKUP_DIR="${HOME}/.config-backup/$(date +%Y%m%d-%H%M%S)"
 
 SKIP_PACKAGES=0
@@ -115,6 +115,25 @@ else
     else
         ok "no AUR packages listed"
     fi
+
+    step "Claude Code"
+    # Anthropic's native installer. Not a pacman package: it installs a
+    # launcher at ~/.local/bin/claude pointing into ~/.local/share/claude/
+    # and keeps itself updated in the background, so there is nothing to
+    # reconcile on later runs.
+    if command -v claude >/dev/null; then
+        ok "claude already installed ($(claude --version 2>/dev/null || echo 'version unknown'))"
+    elif (( DRY_RUN )); then
+        printf '  %s[dry-run]%s install Claude Code via https://claude.ai/install.sh\n' "$C_YELLOW" "$C_OFF"
+    else
+        curl -fsSL https://claude.ai/install.sh | bash
+        if command -v claude >/dev/null || [[ -x "${HOME}/.local/bin/claude" ]]; then
+            ok "Claude Code installed - run 'claude' once to sign in"
+        else
+            warn "Claude Code installer finished but 'claude' was not found on PATH"
+            warn "check that ~/.local/bin is on your PATH"
+        fi
+    fi
 fi
 
 # ============================================================================
@@ -125,8 +144,12 @@ step "Dotfiles"
 # Create the target directories up front. Without this, stow "folds" a whole
 # package into a single directory symlink (~/.config/hypr -> repo), and then
 # per-host files written into that directory would land inside the repo.
+# ~/.claude must exist as a real directory too: Claude Code writes its own
+# state (credentials, history, project data) alongside the settings file we
+# stow, and a folded directory symlink would drop all of that into the repo.
 run mkdir -p "${HOME}/.config"/{hypr,ghostty,rofi,mako} \
              "${HOME}/.local/bin" \
+             "${HOME}/.claude" \
              "${HOME}/Pictures/Screenshots" \
              "${HOME}/Pictures/wallpapers"
 
@@ -293,8 +316,11 @@ cat <<SUMMARY
        looking right, copy it into this repo to version it:
          cp ~/.config/hyprpanel/config.json hyprpanel/
        (See the HyprPanel section of the README.)
-    3. Drop a wallpaper at ~/Pictures/wallpapers/wall.png.
-    4. Pin this machine's monitor layout:
+    3. Sign in to Claude Code by running 'claude' once. It keeps itself
+       updated in the background; 'claude doctor' checks install health
+       and validates your settings file.
+    4. Drop a wallpaper at ~/Pictures/wallpapers/wall.png.
+    5. Pin this machine's monitor layout:
          mkdir -p hosts/\$(hostnamectl --static)
          hyprctl monitors            # read the connector names
          \$EDITOR hosts/\$(hostnamectl --static)/monitors.conf

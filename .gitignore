@@ -21,6 +21,14 @@ local.conf
 # Generated per-host state
 hosts/*/local*
 
+# Claude Code: only settings.json is tracked. Everything else under
+# ~/.claude is credentials, session state, or per-project data.
+claude/.claude/*
+!claude/.claude/settings.json
+.claude/settings.local.json
+.claude.json
+.credentials.json
+
 # Keys, tokens, environment files
 .env
 .env.*

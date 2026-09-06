@@ -62,6 +62,8 @@ stow                      # symlinks the config packages into ~/.config
 git
 base-devel
 jq                        # required by hypr-window-switch
+curl                      # required by the Claude Code installer
+ripgrep                   # fast grep; Claude Code bundles its own but this is useful anyway
 unzip
 man-db
 btop

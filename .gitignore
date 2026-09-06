@@ -1,0 +1,33 @@
+# ---------------------------------------------------------------------------
+# This repo is public. Anything machine-specific or secret stays untracked.
+# ---------------------------------------------------------------------------
+
+# Real credentials for archinstall (only the .example.json is tracked)
+archinstall/user_credentials.json
+archinstall/*credentials*.json
+!archinstall/*credentials*.example.json
+
+# Local, machine-specific overrides dropped in by hand
+local/
+secrets/
+*.local
+*.local.conf
+local.conf
+
+# Generated per-host state
+hosts/*/local*
+
+# Keys, tokens, environment files
+.env
+.env.*
+*.key
+*.pem
+*.gpg
+id_ed25519*
+id_rsa*
+*.kbx
+
+# Editor / OS noise
+*.swp
+*~
+.DS_Store

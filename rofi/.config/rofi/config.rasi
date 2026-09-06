@@ -12,7 +12,6 @@ configuration {
     display-window:              " Windows";
     display-dmenu:               " Pick";
     terminal:                    "ghostty";
-    kb-cancel:                   "Escape,super+space";
 }
 
 * {

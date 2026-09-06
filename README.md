@@ -62,7 +62,10 @@ pacman -Sy git archinstall
 git clone https://github.com/<you>/arch-hyprland-deploy /root/deploy
 cd /root/deploy
 
-# Fill in your username/passwords locally — this file is gitignored.
+# Generate password HASHES — archinstall stores hashes, not plaintext.
+openssl passwd -6            # prompts, prints a hash; repeat for root
+
+# Paste them in locally — this file is gitignored.
 cp archinstall/user_credentials.example.json archinstall/user_credentials.json
 vim archinstall/user_credentials.json
 
@@ -122,9 +125,17 @@ the default permanently, `"device"` lives under
 
 ### archinstall version note
 
-Config schemas drift between archinstall releases. This file targets the
-archinstall 3.x schema. If your ISO's archinstall rejects it, run `archinstall`
-interactively once, use *Save configuration*, and diff against this file.
+Config schemas drift between archinstall releases, and **neither JSON file here
+has been validated against a live ISO** — they target the archinstall 3.x schema
+as documented upstream. Treat the `--dry-run` above as required, not optional.
+
+If your ISO's archinstall rejects either file, run `archinstall` interactively
+once, use *Save configuration*, and diff the result against these files. That is
+also the fastest way to get a correctly-shaped credentials file: it writes the
+password hashes for you.
+
+The disk layout in particular uses `{"unit": "Percent", "value": 100}` for the
+root partition's size, which is the shape most likely to have drifted.
 
 ---
 

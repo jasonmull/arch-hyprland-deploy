@@ -38,6 +38,7 @@ archinstall/
   user_configuration.json        # unattended base install (tracked)
   user_credentials.example.json  # template (tracked)
   user_credentials.json          # your real credentials (gitignored)
+  retarget.py                    # rewrites device + root size for a target disk
 BRINGUP.md                       # manual, staged first-build order
 install.sh                       # post-install setup, idempotent
 pkglist-official.txt             # pacman packages
@@ -94,55 +95,118 @@ eyeball everything before it commits.
 
 | Setting | Value |
 | --- | --- |
-| Bootloader | systemd-boot |
-| Filesystem | ext4 root |
-| Partitioning | 1 GiB FAT32 ESP at `/boot`, rest of disk as ext4 `/` |
-| Swap | enabled — **zram**, not a swap partition |
+| Bootloader | Limine |
+| Filesystem | Btrfs with `compress=zstd,noatime` |
+| Subvolumes | `@` → `/`, `@home` → `/home`, `@log` → `/var/log`, `@pkg` → `/var/cache/pacman/pkg` |
+| Snapshots | Snapper |
+| Partitioning | 1 GiB FAT32 ESP at `/boot`, rest of disk as Btrfs |
+| Swap | enabled — **zram (zstd)**, not a swap partition |
 | Audio | PipeWire |
 | Network | NetworkManager |
 | Timezone | `America/Chicago` |
 | Locale / keymap | `en_US.UTF-8`, `us` |
 | Kernel | `linux` |
-| Hostname | `archbox` (placeholder) |
+| Hostname | `archlinux` (placeholder) |
+| Schema | archinstall **4.4** |
+
+`@log` and `@pkg` are separate subvolumes so that logs and the package cache are
+excluded from snapshots — rolling back shouldn't rewind your journal or throw
+away cached packages.
 
 Stage-1 packages are deliberately minimal (`base-devel`, `git`, `sudo`, `vim`,
-`openssh`) — the desktop is stage 2's job.
+`openssh`). `git` matters: without it you can't clone this repo on the machine
+you just installed.
+
+Two things it deliberately does **not** set:
+
+- **`gfx_driver` is null.** Fine for AMD/Intel — mesa arrives as a Hyprland
+  dependency. **On NVIDIA you want it set**, along with the usual Hyprland
+  NVIDIA environment variables, and finding that out at first login is painful.
+- **`auth_config` is empty.** Users and passwords come from `--creds`; the
+  install has no accounts without it.
+
+Since swap is zram-only, there is no hibernation. That's usually right for a
+desktop and a real decision on a laptop.
 
 ### Changing the target disk (do this on every new machine)
 
-The config ships with a **placeholder disk of `/dev/nvme0n1`**. It is the single
-most machine-specific value in the file, and installing to the wrong device will
-wipe it. Check the real name first:
+**archinstall has no percent unit.** Its `Unit` enum is `B`/`kB`/`MB`/`GB`/… ,
+`KiB`/`MiB`/`GiB`/…, and `sectors`; `Size` has no percent handling. Partition
+sizes are therefore absolute byte counts, and a tracked config cannot be
+disk-agnostic — run it unchanged on a bigger disk and it silently leaves the
+remainder unallocated. The disk *device* fails loudly; the disk *size* does not.
+
+So don't hand-edit it. Check the device name, then let the script do the
+arithmetic:
 
 ```bash
-lsblk -dno NAME,SIZE,MODEL
+lsblk -dno NAME,SIZE,MODEL           # find the real device
+
+./archinstall/retarget.py /dev/nvme0n1 -o /tmp/machine.json
 ```
 
-Then override it **without editing the tracked file**, so `git status` stays clean:
+It reads the disk's real size, rewrites the device path and the root partition
+to fill it (reserving 1 MiB at the end for the GPT backup header), and writes a
+new file — the tracked config stays clean. It refuses disks under ~9 GiB and
+bails if the layout isn't the ESP + Btrfs pair it expects, rather than producing
+a subtly wrong partition table.
+
+```
+device      /dev/nvme0n1
+disk size       931.32 GiB
+ESP               1.00 GiB  at 1 MiB
+root            930.32 GiB  at 1.0010 GiB
+reserved             1 MiB  (GPT backup header)
+```
+
+`--hostname` sets that too. `--disk-size-bytes` computes a layout for a disk
+that isn't attached, so you can check the arithmetic before booting the ISO.
+
+Then dry-run the result:
 
 ```bash
-sed 's|/dev/nvme0n1|/dev/sda|' archinstall/user_configuration.json > /tmp/machine.json
-archinstall --config /tmp/machine.json --creds archinstall/user_credentials.json --dry-run
+archinstall --config /tmp/machine.json \
+            --creds archinstall/user_credentials.json --dry-run
 ```
 
-Common names: `/dev/nvme0n1` (NVMe), `/dev/sda` (SATA), `/dev/vda` (VM). To change
-the default permanently, `"device"` lives under
-`disk_config.device_modifications[0]` and is the only place the disk is named.
-`hostname` and `timezone` are single keys near the top of the same file.
+Common device names: `/dev/nvme0n1` (NVMe), `/dev/sda` (SATA), `/dev/vda` (VM).
+
+### Mirrors
+
+`mirror_config` lists six HTTPS US mirrors. It's a starting point, not a
+maintained list — mirrors go stale, and a saved ranking from today will be wrong
+in six months. After install, regenerate properly:
+
+```bash
+sudo pacman -S reflector
+sudo reflector --country US --age 12 --protocol https --sort rate \
+               --save /etc/pacman.d/mirrorlist
+```
 
 ### archinstall version note
 
-Config schemas drift between archinstall releases, and **neither JSON file here
-has been validated against a live ISO** — they target the archinstall 3.x schema
-as documented upstream. Treat the `--dry-run` above as required, not optional.
+This config is **derived from a real archinstall 4.4 save**, not written from
+the docs — the schema, the `Size` object shape, and the Btrfs options are what
+archinstall itself produced. That makes it considerably more trustworthy than
+the 3.x-shaped config that preceded it, which used a `Percent` unit that does
+not exist.
 
-If your ISO's archinstall rejects either file, run `archinstall` interactively
-once, use *Save configuration*, and diff the result against these files. That is
-also the fastest way to get a correctly-shaped credentials file: it writes the
-password hashes for you.
+Schemas still drift between releases. If your ISO's archinstall rejects either
+file, run it interactively once, use *Save configuration*, and diff the result
+against these. That's also the fastest way to get a correct credentials file:
+it writes the password hashes for you.
 
-The disk layout in particular uses `{"unit": "Percent", "value": 100}` for the
-root partition's size, which is the shape most likely to have drifted.
+### After the install: verify Snapper snapshots boot
+
+Limine plus Snapper needs the boot entries for snapshots to actually be
+generated — usually `limine-snapper-sync` or the Limine mkinitcpio hook.
+archinstall may not wire that up. Take a snapshot and confirm it appears in the
+boot menu **before** you rely on rollback:
+
+```bash
+sudo snapper -c root create -d "test"
+sudo snapper -c root list
+```
 
 ---
 

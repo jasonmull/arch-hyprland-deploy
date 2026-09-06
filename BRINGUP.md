@@ -36,19 +36,26 @@ Three rules drive it:
 
 ## Stage 0 — Validate the base install in a VM
 
-Do this before touching real hardware. `archinstall/user_configuration.json`
-wipes a disk and has never been run.
+Do this before touching real hardware. `archinstall/user_configuration.json` wipes
+a disk. It is derived from a real archinstall 4.4 save, but this repo has not
+run it end to end.
 
 ```bash
 qemu-img create -f qcow2 arch-test.qcow2 40G
 qemu-system-x86_64 -enable-kvm -m 4G -smp 4 \
   -drive file=arch-test.qcow2,format=qcow2 \
   -cdrom archlinux.iso -boot d \
-  -bios /usr/share/ovmf/x64/OVMF.fd     # UEFI: required for systemd-boot
+  -bios /usr/share/ovmf/x64/OVMF.fd     # UEFI: required for Limine
 ```
 
-Inside the VM, the disk will be `/dev/vda`, not `/dev/nvme0n1` — use the `sed`
-override from the README. Generate password hashes with `openssl passwd -6`.
+Inside the VM the disk is `/dev/vda`, not `/dev/nvme0n1`, and it's a different
+size — use the retarget script, which fixes both:
+
+```bash
+./archinstall/retarget.py /dev/vda -o /tmp/machine.json
+```
+
+Generate password hashes with `openssl passwd -6`.
 
 **Verify:** `--dry-run` is accepted, then a real install completes and the VM
 reboots to a login prompt.
@@ -66,10 +73,22 @@ Run archinstall with the config you just validated. Nothing else yet.
 
 ```bash
 lsblk                          # partition layout is what you expected
+findmnt -t btrfs               # subvolumes mounted where you expect
+btrfs subvolume list /         # @, @home, @log, @pkg
 ping -c3 archlinux.org         # NetworkManager brought the link up
+nmcli device status            # NetworkManager is the one managing it
 sudo -v                        # your user has sudo
 free -h                        # zram swap is present
-bootctl status                 # systemd-boot installed
+git --version                  # you can clone this repo
+```
+
+Then confirm rollback actually works before you need it — Limine + Snapper often
+needs `limine-snapper-sync` or the mkinitcpio hook to generate boot entries, and
+archinstall may not have wired it up:
+
+```bash
+sudo snapper -c root create -d "test"
+sudo snapper -c root list      # and check the boot menu on next reboot
 ```
 
 You should be at a TTY. That is the correct place to be — no desktop yet.

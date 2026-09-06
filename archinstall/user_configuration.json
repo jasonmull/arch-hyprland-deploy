@@ -1,82 +1,155 @@
 {
-  "archinstall-language": "English",
-  "bootloader": "Systemd-boot",
-  "hostname": "archbox",
-  "kernels": [
-    "linux"
-  ],
-  "ntp": true,
-  "swap": true,
-  "timezone": "America/Chicago",
-  "locale_config": {
-    "kb_layout": "us",
-    "sys_enc": "UTF-8",
-    "sys_lang": "en_US.UTF-8"
-  },
-  "network_config": {
-    "type": "nm"
-  },
-  "audio_config": {
-    "audio": "pipewire"
-  },
-  "profile_config": null,
-  "packages": [
-    "base-devel",
-    "git",
-    "sudo",
-    "vim",
-    "openssh"
-  ],
-  "additional-repositories": [],
-  "parallel downloads": 5,
-  "disk_config": {
-    "config_type": "manual_partitioning",
-    "device_modifications": [
-      {
-        "device": "/dev/nvme0n1",
-        "wipe": true,
-        "partitions": [
-          {
-            "obj_id": "esp-0",
-            "status": "create",
-            "type": "primary",
-            "flags": [
-              "boot",
-              "esp"
-            ],
-            "fs_type": "fat32",
-            "mountpoint": "/boot",
-            "mount_options": [],
-            "start": {
-              "unit": "MiB",
-              "value": 1
-            },
-            "size": {
-              "unit": "GiB",
-              "value": 1
-            },
-            "btrfs": []
-          },
-          {
-            "obj_id": "root-0",
-            "status": "create",
-            "type": "primary",
-            "flags": [],
-            "fs_type": "ext4",
-            "mountpoint": "/",
-            "mount_options": [],
-            "start": {
-              "unit": "GiB",
-              "value": 1
-            },
-            "size": {
-              "unit": "Percent",
-              "value": 100
-            },
-            "btrfs": []
-          }
+    "archinstall_language": "English",
+    "auth_config": {},
+    "bootloader_config": {
+        "bootloader": "Limine",
+        "removable": false,
+        "uki": false
+    },
+    "custom_commands": [],
+    "disk_config": {
+        "btrfs_options": {
+            "snapshot_config": {
+                "type": "Snapper"
+            }
+        },
+        "config_type": "manual_partitioning",
+        "device_modifications": [
+            {
+                "device": "/dev/nvme0n1",
+                "partitions": [
+                    {
+                        "btrfs": [],
+                        "dev_path": null,
+                        "flags": [
+                            "boot"
+                        ],
+                        "fs_type": "fat32",
+                        "mount_options": [],
+                        "mountpoint": "/boot",
+                        "obj_id": "00000000-0000-4000-8000-000000000001",
+                        "size": {
+                            "sector_size": {
+                                "unit": "B",
+                                "value": 512
+                            },
+                            "unit": "GiB",
+                            "value": 1
+                        },
+                        "start": {
+                            "sector_size": {
+                                "unit": "B",
+                                "value": 512
+                            },
+                            "unit": "MiB",
+                            "value": 1
+                        },
+                        "status": "create",
+                        "type": "primary"
+                    },
+                    {
+                        "btrfs": [
+                            {
+                                "mountpoint": "/",
+                                "name": "@"
+                            },
+                            {
+                                "mountpoint": "/home",
+                                "name": "@home"
+                            },
+                            {
+                                "mountpoint": "/var/log",
+                                "name": "@log"
+                            },
+                            {
+                                "mountpoint": "/var/cache/pacman/pkg",
+                                "name": "@pkg"
+                            }
+                        ],
+                        "dev_path": null,
+                        "flags": [],
+                        "fs_type": "btrfs",
+                        "mount_options": [
+                            "compress=zstd",
+                            "noatime"
+                        ],
+                        "mountpoint": null,
+                        "obj_id": "00000000-0000-4000-8000-000000000002",
+                        "size": {
+                            "sector_size": {
+                                "unit": "B",
+                                "value": 512
+                            },
+                            "unit": "B",
+                            "value": 67644686336
+                        },
+                        "start": {
+                            "sector_size": {
+                                "unit": "B",
+                                "value": 512
+                            },
+                            "unit": "B",
+                            "value": 1074790400
+                        },
+                        "status": "create",
+                        "type": "primary"
+                    }
+                ],
+                "wipe": true
+            }
         ]
-      }
-    ]
-  }
+    },
+    "hostname": "archlinux",
+    "kernels": [
+        "linux"
+    ],
+    "locale_config": {
+        "console_font": "default8x16",
+        "kb_layout": "us",
+        "sys_enc": "UTF-8",
+        "sys_lang": "en_US.UTF-8"
+    },
+    "mirror_config": {
+        "custom_repositories": [],
+        "custom_servers": [],
+        "mirror_regions": {
+            "United States": [
+                "https://mirrors.kernel.org/archlinux/$repo/os/$arch",
+                "https://mirrors.mit.edu/archlinux/$repo/os/$arch",
+                "https://mirror.arizona.edu/archlinux/$repo/os/$arch",
+                "https://mirror.fcix.net/archlinux/$repo/os/$arch",
+                "https://iad.mirror.rackspace.com/archlinux/$repo/os/$arch",
+                "https://plug-mirror.rcac.purdue.edu/archlinux/$repo/os/$arch"
+            ]
+        },
+        "optional_repositories": []
+    },
+    "network_config": {
+        "type": "nm"
+    },
+    "ntp": true,
+    "packages": [
+        "base-devel",
+        "git",
+        "sudo",
+        "vim",
+        "openssh"
+    ],
+    "pacman_config": {
+        "color": true,
+        "parallel_downloads": 5
+    },
+    "profile_config": {
+        "gfx_driver": null,
+        "greeter": null,
+        "profile": {}
+    },
+    "script": null,
+    "services": [],
+    "swap": {
+        "algorithm": "zstd",
+        "enabled": true
+    },
+    "timezone": "America/Chicago",
+    "version": "4.4"
 }

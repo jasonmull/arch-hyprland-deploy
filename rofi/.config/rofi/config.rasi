@@ -1,0 +1,74 @@
+/* rofi configuration - stowed to ~/.config/rofi/config.rasi
+ * Requires rofi 2.x (the Wayland backend merged into mainline in 2.0.0). */
+
+configuration {
+    modes:                       "drun,run,window";
+    font:                        "JetBrainsMono Nerd Font 11";
+    show-icons:                  true;
+    icon-theme:                  "Papirus-Dark";
+    drun-display-format:         "{name}";
+    display-drun:                " Apps";
+    display-run:                 " Run";
+    display-window:              " Windows";
+    display-dmenu:               " Pick";
+    terminal:                    "ghostty";
+}
+
+* {
+    bg:          #1e1e2e;
+    bg-alt:      #313244;
+    fg:          #cdd6f4;
+    fg-dim:      #a6adc8;
+    accent:      #89b4fa;
+    urgent:      #f38ba8;
+
+    background-color: transparent;
+    text-color:       @fg;
+    margin:  0;
+    padding: 0;
+    spacing: 0;
+}
+
+window {
+    width:            36em;
+    border-radius:    10px;
+    background-color: @bg;
+    border:           2px;
+    border-color:     @accent;
+}
+
+mainbox { padding: 12px; children: [ inputbar, listview ]; }
+
+inputbar {
+    background-color: @bg-alt;
+    border-radius:    8px;
+    padding:          10px 12px;
+    spacing:          8px;
+    children:         [ prompt, entry ];
+}
+
+prompt { text-color: @accent; }
+entry  { placeholder: "Search..."; placeholder-color: @fg-dim; }
+
+listview {
+    lines:   10;
+    columns: 1;
+    padding: 10px 0 0 0;
+    spacing: 2px;
+    scrollbar: false;
+    fixed-height: false;
+}
+
+element {
+    padding:       8px 10px;
+    border-radius: 6px;
+    spacing:       10px;
+}
+
+element normal normal   { text-color: @fg; }
+element normal urgent   { text-color: @urgent; }
+element selected normal { background-color: @accent; text-color: @bg; }
+element selected urgent { background-color: @urgent; text-color: @bg; }
+
+element-icon { size: 1.2em; vertical-align: 0.5; }
+element-text { vertical-align: 0.5; }

@@ -1,0 +1,12 @@
+# AUR packages. Installed by install.sh with: yay -S --needed
+# Keep this list SHORT - every entry here is a package that builds from
+# source on your machine and can break on upstream churn.
+#
+# Transitive AUR dependencies (aylurs-gtk-shell, matugen, etc.) are
+# resolved by yay automatically and are deliberately not listed here.
+
+hyprpanel-bin             # status bar / panel (ags-based).
+                          # The source package `hyprpanel` has known build
+                          # failures; -bin is the prebuilt one.
+
+bemoji                    # emoji picker; shells out to rofi, remembers recents

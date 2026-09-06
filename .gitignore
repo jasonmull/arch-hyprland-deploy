@@ -1,0 +1,45 @@
+# ---------------------------------------------------------------------------
+# This repo is public. Anything machine-specific or secret stays untracked.
+# ---------------------------------------------------------------------------
+
+# Real credentials for archinstall (only the .example.json is tracked)
+archinstall/user_credentials.json
+archinstall/*credentials*.json
+!archinstall/*credentials*.example.json
+
+# Local, machine-specific overrides dropped in by hand
+local/
+secrets/
+local.conf
+# Local variants of tracked files, e.g. foo.local.conf.
+# NOTE: do not use a bare `*.local` here - it also matches the XDG `.local`
+# directory, which would silently exclude the scripts/ stow package.
+*.local.conf
+*.local.json
+*.local.toml
+
+# Generated per-host state
+hosts/*/local*
+
+# Claude Code: only settings.json is tracked. Everything else under
+# ~/.claude is credentials, session state, or per-project data.
+claude/.claude/*
+!claude/.claude/settings.json
+.claude/settings.local.json
+.claude.json
+.credentials.json
+
+# Keys, tokens, environment files
+.env
+.env.*
+*.key
+*.pem
+*.gpg
+id_ed25519*
+id_rsa*
+*.kbx
+
+# Editor / OS noise
+*.swp
+*~
+.DS_Store

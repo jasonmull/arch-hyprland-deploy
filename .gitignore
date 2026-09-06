@@ -10,9 +10,13 @@ archinstall/*credentials*.json
 # Local, machine-specific overrides dropped in by hand
 local/
 secrets/
-*.local
-*.local.conf
 local.conf
+# Local variants of tracked files, e.g. foo.local.conf.
+# NOTE: do not use a bare `*.local` here - it also matches the XDG `.local`
+# directory, which would silently exclude the scripts/ stow package.
+*.local.conf
+*.local.json
+*.local.toml
 
 # Generated per-host state
 hosts/*/local*

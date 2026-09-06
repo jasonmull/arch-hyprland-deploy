@@ -1,0 +1,68 @@
+# Packages from the official Arch repositories (core/extra).
+# Installed by install.sh with: pacman -S --needed
+# Lines starting with # and blank lines are ignored.
+
+# --- Compositor and session ---------------------------------------------
+hyprland
+hyprlock                  # screen locker
+hypridle                  # idle daemon
+hyprpaper                 # wallpaper daemon
+hyprpolkitagent           # polkit auth agent (Hyprland's own)
+xdg-desktop-portal-hyprland
+xdg-desktop-portal-gtk    # file pickers for GTK apps
+qt5-wayland
+qt6-wayland
+
+# --- Login manager ------------------------------------------------------
+greetd
+greetd-tuigreet
+
+# --- Core desktop apps --------------------------------------------------
+ghostty                   # terminal (in [extra] since 2025 - not AUR)
+rofi                      # launcher; 2.x speaks Wayland natively
+mako                      # notification daemon
+thunar                    # file manager
+thunar-volman
+tumbler                   # thumbnails for thunar
+gvfs                      # mounting/trash support
+
+# --- Audio --------------------------------------------------------------
+pipewire
+pipewire-alsa
+pipewire-pulse
+pipewire-jack
+wireplumber
+pavucontrol
+
+# --- Network and bluetooth ----------------------------------------------
+networkmanager
+network-manager-applet
+bluez
+bluez-utils
+blueman
+
+# --- Screenshots, clipboard, media keys ---------------------------------
+grim                      # screenshot capture
+slurp                     # region selection
+swappy                    # quick annotate/save
+wl-clipboard              # wl-copy / wl-paste
+cliphist                  # clipboard history (SUPER+SHIFT+V)
+brightnessctl
+playerctl
+
+# --- Fonts --------------------------------------------------------------
+ttf-jetbrains-mono-nerd    # UI + terminal font (has the icon glyphs)
+noto-fonts
+noto-fonts-emoji
+noto-fonts-cjk
+papirus-icon-theme
+
+# --- Tooling used by this repo and the helper scripts -------------------
+stow                      # symlinks the config packages into ~/.config
+git
+base-devel
+jq                        # required by hypr-window-switch
+unzip
+man-db
+btop
+fastfetch

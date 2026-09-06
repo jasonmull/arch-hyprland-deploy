@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+# Fuzzy-switch to any open window across all Hyprland workspaces.
+#
+# rofi 2.x does ship a built-in `-show window` mode, but its reliability on
+# Hyprland varies (it depends on wlr-foreign-toplevel and has been reported to
+# list only a subset of windows). Asking hyprctl directly is exact.
+#
+# Bound to SUPER+TAB in hyprland.conf. Requires: hyprctl, jq, rofi.
+set -euo pipefail
+
+for cmd in hyprctl jq rofi; do
+    command -v "$cmd" >/dev/null || { echo "missing dependency: $cmd" >&2; exit 1; }
+done
+
+# One line per window: "<address>\t[workspace] class - title"
+mapfile -t rows < <(
+    hyprctl -j clients | jq -r '
+        [ .[] | select(.mapped == true and .title != "") ]
+        | sort_by(.workspace.id, .class)
+        | .[]
+        | "\(.address)\t[\(.workspace.name)] \(.class) - \(.title)"
+    '
+)
+
+(( ${#rows[@]} )) || exit 0
+
+index=$(printf '%s\n' "${rows[@]}" | cut -f2- \
+        | rofi -dmenu -i -format i -p "Windows") || exit 0
+[[ -n "$index" ]] || exit 0
+
+address=${rows[index]%%$'\t'*}
+hyprctl dispatch focuswindow "address:${address}"

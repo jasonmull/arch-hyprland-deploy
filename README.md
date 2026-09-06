@@ -7,6 +7,12 @@ onto a new machine and go from bare metal to a working desktop in two stages:
 2. **Desktop** — [`install.sh`](#stage-2--desktop-setup) installs packages, stows
    dotfiles, and enables services. Idempotent, so re-run it whenever.
 
+> **Building this for the first time?** The dotfiles here have not been run on a
+> real machine yet. Work through **[BRINGUP.md](BRINGUP.md)** instead — it builds
+> the desktop element by element with a verification checkpoint at each step, and
+> ends by rewriting `install.sh` from what actually worked. Come back to the
+> one-shot path once the repo reflects a machine you've booted.
+
 > This repository is public. No hostnames, serials, usernames, or secrets are
 > tracked — see [Public repo hygiene](#public-repo-hygiene).
 
@@ -32,6 +38,7 @@ archinstall/
   user_configuration.json        # unattended base install (tracked)
   user_credentials.example.json  # template (tracked)
   user_credentials.json          # your real credentials (gitignored)
+BRINGUP.md                       # manual, staged first-build order
 install.sh                       # post-install setup, idempotent
 pkglist-official.txt             # pacman packages
 pkglist-aur.txt                  # yay packages (kept deliberately short)
